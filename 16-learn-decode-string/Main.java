@@ -11,6 +11,8 @@ class Main {
 
         final String thirdCase = decodeString("2[abc]3[cd]ef");
         System.out.println("thirdCase: " + thirdCase.equals("abcabccdcdcdef"));
+
+        decodeString("3[a2[c]");
     }
 
     String decodeString(String s) {
@@ -42,9 +44,10 @@ class Main {
 
                 final int multiplier = Integer.parseInt(digits.toString());
                 stack.push(multiplier);
-                stackSb.push(decodedString);
 
-                decodedString = new StringBuilder();
+                // Never push mutable reference
+                stackSb.push(new StringBuilder(decodedString));
+                decodedString.setLength(0);
 
                 idx = idx + 1;
                 continue;
@@ -53,16 +56,21 @@ class Main {
             if (idx < s.length() && s.charAt(idx) == ']') {
                 final int multiplier = stack.pop();
 
-                final StringBuilder multiplied = new StringBuilder();
+                // Pre-allocate memory
+                final StringBuilder multiplied = new StringBuilder(decodedString.length() * multiplier);
                 for (int c = 0; c < multiplier; c++) {
                     multiplied.append(decodedString);
                 }
-                
+
                 decodedString = stackSb.pop();
                 decodedString.append(multiplied);
             }
 
             idx = idx + 1;
+        }
+
+        if (!stack.isEmpty()) {
+            throw new IllegalArgumentException("Unbalanced brackets: missing ']'");
         }
 
         return decodedString.toString();
